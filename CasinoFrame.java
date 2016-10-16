@@ -1,11 +1,12 @@
 package casino;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.text.NumberFormat;
+import java.util.Locale;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -13,9 +14,9 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.text.BadLocationException;
 
 public class CasinoFrame extends JFrame{
     private static CasinoFrame frame;
@@ -41,6 +42,8 @@ public class CasinoFrame extends JFrame{
                 scorePanel.removeAll();
                 point1 = new JButton("1");
                 point1.setPreferredSize(new Dimension(180, 320));
+                point1.setEnabled(false);
+                point1.setBackground(Color.CYAN);
                 point2 = new JButton("2");
                 point2.setPreferredSize(new Dimension(180, 320));
                 point3 = new JButton("3");
@@ -59,8 +62,10 @@ public class CasinoFrame extends JFrame{
                 rateLabel.setText("Podaj stawkę:");
                 scorePanel.removeAll();
                 scoreArea = new JTextArea(20, 50);
+                scoreArea.setLineWrap(true);
+                JScrollPane scoreScrollPane = new JScrollPane(scorePanel);
                 scorePanel.add(scoreArea);
-                add(scorePanel, BorderLayout.CENTER);
+                add(scoreScrollPane, BorderLayout.CENTER);
                 validate();
             } 
         });
@@ -135,18 +140,31 @@ public class CasinoFrame extends JFrame{
         boolean win = slotMachineGame.isWin();
         p.changeCash(b.getRate(), win);
         b.changeStateOfCasinoMoney(b.getRate(), win);
+        NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(Locale.getDefault());
         if(win){
-            JOptionPane.showMessageDialog(null, "WYGRAŁEŚ!!\nTwoje pieniądze: " + p.getCash() + " pieniądze kasyna: " + b.getStateOfCasinoMoney());
+            JOptionPane.showMessageDialog(null, "WYGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()));
         }else{
-            JOptionPane.showMessageDialog(null, "PRZEGRAŁEŚ!!\nTwoje pieniądze: " + p.getCash() + " pieniądze kasyna: " + b.getStateOfCasinoMoney());
+            JOptionPane.showMessageDialog(null, "PRZEGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()));
         }
     }
     public void startBlackjackGame(int cash, int rate){
         Blackjack blackjackGame = Blackjack.createBlackjack();
+        if(!start){
+            b.setRate(rate);
+            p.setCash(cash);
+            start = true;
+        }
         int[] playerCards, croupierCards;
         blackjackGame.play();
-        char character;
+        int option;
         boolean win = false;
+        scoreArea.append("ZASADY GRY:\nKarty o wartościach od 2 do 10 są odpowiednio"
+                + "oznaczone liczbami od 2 do 10. Waltet, Dama i Król to kolejno liczby "
+                + "11, 12, 13. Te trzy karty mają wartość 10. Natomiast AS może mieć wartośc "
+                + "1 lub 11, gdzie 1 to oznaczenie 14, a 11 to oznaczenie 15.\n"
+                + "Gracz wygrywa, gdy jego liczba punktów jest >= niż punkty krupiera oraz <= od 21.\n"
+                + "Możliwe ruchy gracza: hit (pobranie karty), split (zamiana podwójnych kart), stand (oczekiwanie)"
+                + "lub check (sprawdzenie wyniku).\n\n");
         do{
             scoreArea.append("Twoje karty: ");
             playerCards = blackjackGame.getPlayerCards();
@@ -162,40 +180,32 @@ public class CasinoFrame extends JFrame{
                     else scoreArea.append(croupierCards[i] + " ");
             }
             scoreArea.append("\n");
-            scoreArea.append("Co chcesz zrobić?\n");
-            scoreArea.append("h - dobrać kartę, s - nie dobierać karty, r - rozdwoić karty, c - sprawdzić wynik\n");
-            int actualLineCount;
-            actualLineCount = scoreArea.getLineCount();
-            String text = scoreArea.getText();
-            System.out.println(getLastRow(scoreArea));
-            do{
-            }while(text.equals(scoreArea.getText()));
-            character = Character.toLowerCase(getLastRow(scoreArea).charAt(0));
-            switch(character){
-                case 'h':
+            option  = JOptionPane.showOptionDialog(null, "Co chcesz zrobić?", null, 
+                    JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Hit", "Stand", "Split", "Check"}, null);
+            switch(option){
+                case 0:
                     blackjackGame.hit(blackjackGame.getPlayerCards());
                     break;
-                case 's':
+                case 1:
                      break;
-                case 'r':
-                    scoreArea.append("Wybierz numer karty, której duplikatu chcesz się pozbyć:\n");
-                    int i = Integer.parseInt(getLastRow(scoreArea));
+                case 2:
+                    int i = Integer.parseInt(JOptionPane.showInputDialog("Wybierz numer karty, której duplikatu chcesz się pozbyć:"));
                     blackjackGame.split(i);
                     break;
-                case 'c':
+                case 3:
                     scoreArea.append("Wynik:\n");
                     win = blackjackGame.isWin();
                     scoreArea.append("Gracz: " + blackjackGame.getPoints(playerCards) + " krupier: " + blackjackGame.getPoints(croupierCards) + "\n");
             }
-        }while(character != 'c');
-    }
-    private String getLastRow(JTextArea textArea){
-        int i = textArea.getLineCount() - 2;
-        String text = textArea.getText();
-        return text.split("\n")[i];
-    }
-    private boolean isEnteredText(JTextArea textArea, int actualLineCount){
-        if(textArea.getLineCount() != actualLineCount) return true; 
-        else return false;
+        }while(option != 3);
+        b.changeStateOfCasinoMoney(b.getRate(), win);
+        p.changeCash(b.getRate(), win);
+        NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(Locale.getDefault());
+        if(win){
+            scoreArea.append("WYGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()));
+        }else{
+            scoreArea.append("PRZEGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()));
+        }
     }
 }
+
