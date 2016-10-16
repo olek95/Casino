@@ -3,7 +3,7 @@ package casino;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
-import java.util.Scanner;
+import javax.swing.JOptionPane;
 
 public class Blackjack {
      private static Blackjack game;
@@ -61,9 +61,9 @@ public class Blackjack {
         }while(index < playerCards.length && !changed);
     }
     public int aceOneOrEleven(){
-        System.out.println("Pobrałeś asa. Czy ten as ma mieć wartość 1 czy 11?");
-        int value = new Scanner(System.in).nextInt();
-        if(value == 11) return 14;
+        int value = JOptionPane.showOptionDialog(null, "Pobrałeś asa. Czy ten as ma mieć wartośc 1 czy 11?", null, 
+                    JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"1", "11"}, null);
+        if(value == 0) return 14;
         else return 15;
     }
     public int getPoints(int[] ownerCards){
@@ -98,3 +98,4 @@ public class Blackjack {
         return availableCards;
     }
 }
+
