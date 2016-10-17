@@ -41,15 +41,15 @@ public class CasinoFrame extends JFrame{
             public void actionPerformed(ActionEvent e){
                 rateLabel.setText("Podaj stawkę (1/5/10/15):");
                 scorePanel.removeAll();
-                point1 = new JButton("<html><b><font size = 7>1</font></b></html>");
+                point1 = new JButton();
                 point1.setPreferredSize(new Dimension(180, 320));
                 point1.setEnabled(false);
                 point1.setBackground(Color.CYAN);
-                point2 = new JButton("<html><b><font size = 7>2</font></b></html>");
+                point2 = new JButton();
                 point2.setEnabled(false);
                 point2.setBackground(Color.CYAN);
                 point2.setPreferredSize(new Dimension(180, 320));
-                point3 = new JButton("<html><b><font size = 7>3</font></b></html>");
+                point3 = new JButton();
                 point3.setEnabled(false);
                 point3.setBackground(Color.CYAN);
                 point3.setPreferredSize(new Dimension(180, 320));
@@ -58,6 +58,7 @@ public class CasinoFrame extends JFrame{
                 scorePanel.add(point3);
                 add(scorePanel, BorderLayout.CENTER);
                 validate();
+                if(start) changeRate(); 
             } 
         });
         slotMachineButton.doClick();
@@ -68,10 +69,18 @@ public class CasinoFrame extends JFrame{
                 scorePanel.removeAll();
                 scoreArea = new JTextArea(20, 50);
                 scoreArea.setLineWrap(true);
+                scoreArea.setText("ZASADY GRY:\nKarty o wartościach od 2 do 10 są odpowiednio"
+                + "oznaczone liczbami od 2 do 10. Waltet, Dama i Król to kolejno liczby "
+                + "11, 12, 13. Te trzy karty mają wartość 10. Natomiast AS może mieć wartośc "
+                + "1 lub 11, gdzie 1 to oznaczenie 14, a 11 to oznaczenie 15.\n"
+                + "Gracz wygrywa, gdy jego liczba punktów jest >= niż punkty krupiera oraz <= od 21.\n"
+                + "Możliwe ruchy gracza: hit (pobranie karty), split (zamiana podwójnych kart), stand (oczekiwanie)"
+                + "lub check (sprawdzenie wyniku).\n\n");
                 JScrollPane scoreScrollPane = new JScrollPane(scorePanel);
                 scorePanel.add(scoreArea);
                 add(scoreScrollPane, BorderLayout.CENTER);
                 validate();
+                if(start) changeRate();
             } 
         });
         gamesButtonGroup.add(slotMachineButton);
@@ -100,7 +109,15 @@ public class CasinoFrame extends JFrame{
                         }else{
                             rateField.setEnabled(false);
                             playerCashField.setEnabled(false);
-                            if(slotMachineButton.isSelected()) startSlotMachineGame(cash, rate);
+                            if(slotMachineButton.isSelected()){
+                                if(checkForSlotMachineGame(rate))
+                                    startSlotMachineGame(cash, rate);
+                                else{
+                                    rateField.setEnabled(true);
+                                    playerCashField.setEnabled(true);
+                                    JOptionPane.showMessageDialog(null, "Dla jednorękiego bandyty dozwolone wartości to 1/5/10/15");
+                                }
+                            }
                             else startBlackjackGame(cash, rate);
                         }
                     }else
@@ -159,6 +176,7 @@ public class CasinoFrame extends JFrame{
         }else{
             JOptionPane.showMessageDialog(null, "PRZEGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()));
         }
+        changeRate();
     }
     public void startBlackjackGame(int cash, int rate){
         Blackjack blackjackGame = Blackjack.createBlackjack();
@@ -171,13 +189,6 @@ public class CasinoFrame extends JFrame{
         blackjackGame.play();
         int option;
         boolean win = false;
-        scoreArea.append("ZASADY GRY:\nKarty o wartościach od 2 do 10 są odpowiednio"
-                + "oznaczone liczbami od 2 do 10. Waltet, Dama i Król to kolejno liczby "
-                + "11, 12, 13. Te trzy karty mają wartość 10. Natomiast AS może mieć wartośc "
-                + "1 lub 11, gdzie 1 to oznaczenie 14, a 11 to oznaczenie 15.\n"
-                + "Gracz wygrywa, gdy jego liczba punktów jest >= niż punkty krupiera oraz <= od 21.\n"
-                + "Możliwe ruchy gracza: hit (pobranie karty), split (zamiana podwójnych kart), stand (oczekiwanie)"
-                + "lub check (sprawdzenie wyniku).\n\n");
         do{
             scoreArea.append("Twoje karty: ");
             playerCards = blackjackGame.getPlayerCards();
@@ -193,33 +204,75 @@ public class CasinoFrame extends JFrame{
                     else scoreArea.append(croupierCards[i] + " ");
             }
             scoreArea.append("\n");
-            option  = JOptionPane.showOptionDialog(null, "Co chcesz zrobić?", null, 
-                    JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Hit", "Stand", "Split", "Check"}, null);
-            switch(option){
-                case 0:
-                    blackjackGame.hit(blackjackGame.getPlayerCards());
-                    break;
-                case 1:
-                     break;
-                case 2:
-                    int i = Integer.parseInt(JOptionPane.showInputDialog("Wybierz numer karty, której duplikatu chcesz się pozbyć:"));
-                    blackjackGame.split(i);
-                    break;
-                case 3:
-                    scoreArea.append("Wynik:\n");
-                    win = blackjackGame.isWin();
-                    scoreArea.append("Gracz: " + blackjackGame.getPoints(playerCards) + " krupier: " + blackjackGame.getPoints(croupierCards) + "\n");
-            }
+            boolean changed;
+            do{
+                changed = true;
+                option  = JOptionPane.showOptionDialog(null, "Co chcesz zrobić?", null, 
+                        JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Hit", "Stand", "Split", "Check"}, null);
+                switch(option){
+                    case 0:
+                        blackjackGame.hit(blackjackGame.getPlayerCards());
+                        break;
+                    case 1:
+                         break;
+                    case 2:
+                        String sNumber;
+                        do{
+                            sNumber = JOptionPane.showInputDialog("Wybierz numer karty, której duplikatu chcesz się pozbyć:");
+                            int i = -1;
+                            if(sNumber != null && sNumber.matches("[0-9]+")){
+                                i = Integer.parseInt(sNumber);
+                                changed = blackjackGame.split(i);
+                            }
+                        }while(sNumber == null || !sNumber.matches("[0-9]+"));
+                        break;
+                    case 3:
+                        scoreArea.append("Wynik:\n");
+                        win = blackjackGame.isWin();
+                        scoreArea.append("Gracz: " + blackjackGame.getPoints(playerCards) + " krupier: " + blackjackGame.getPoints(croupierCards) + "\n");
+                }
+                if(!changed)
+                    JOptionPane.showMessageDialog(null,"Ta liczba się nie powtarza. Wybierz inną czynność lub podaj inny numer liczby.");
+            }while(!changed);
         }while(option != 3);
         b.changeStateOfCasinoMoney(b.getRate(), win);
         p.changeCash(b.getRate(), win);
         NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(Locale.getDefault());
         if(win){
             Toolkit.getDefaultToolkit().beep();
-            scoreArea.append("WYGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()));
+            scoreArea.append("WYGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()) + "\n\n");
         }else{
-            scoreArea.append("PRZEGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()));
+            scoreArea.append("PRZEGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()) + "\n\n");
         }
+        changeRate();
+    }
+    private void changeRate(){
+        boolean notEnoughMoney = false;
+        int option = JOptionPane.showConfirmDialog(null, "Czy chcesz zmienić stawkę?");
+        if(option == JOptionPane.YES_OPTION){
+            String sNewRate;
+            int newRate = 0;
+            do{
+                sNewRate = JOptionPane.showInputDialog("Ile ma wynosić nowa wartość stawki? (jeśli Jednoręki bandyta to 1/5/10/15)");
+                if(sNewRate != null && sNewRate.matches("[0-9]+")){
+                    newRate = Integer.parseInt(sNewRate);
+                    notEnoughMoney = newRate > p.getCash() || newRate > b.getStateOfCasinoMoney();
+                    if(notEnoughMoney){
+                        JOptionPane.showMessageDialog(null, "Gracz lub kasyno nie mają tyle pieniędzy.");
+                    }else{
+                        if(checkForSlotMachineGame(newRate)){
+                            b.setRate(Integer.parseInt(sNewRate));
+                        }
+                    }
+                }
+                System.out.println(sNewRate);
+            }while(sNewRate != null && (!sNewRate.matches("[0-9]+") || !checkForSlotMachineGame(newRate) || notEnoughMoney));
+        }    
+    }
+    private boolean checkForSlotMachineGame(int cash){
+        if(slotMachineButton.isSelected() && (cash == 1 || cash == 5 || cash == 10 || cash == 15) || !slotMachineButton.isSelected()) 
+            return true; 
+        return false;
     }
 }
 
