@@ -46,19 +46,19 @@ public class Blackjack {
             availableCards.replace(drawn, availableCards.get(drawn) - 1);
         }
     }
-    public void split(int i){
+    public boolean split(int i){
         int card = playerCards[i - 1];
         int index = 0;
-        boolean changed = false;
         do{
             if(index != i - 1 && playerCards[index] == card){
                 playerCards[i - 1] = 0;
                 hit(playerCards);
                 availableCards.replace(card, availableCards.get(card) + 1);
-                changed = true;
+                return true;
             }
             index++;
-        }while(index < playerCards.length && !changed);
+        }while(index < playerCards.length);
+        return false;
     }
     public int aceOneOrEleven(){
         int value = JOptionPane.showOptionDialog(null, "Pobrałeś asa. Czy ten as ma mieć wartośc 1 czy 11?", null, 
