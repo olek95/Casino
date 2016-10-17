@@ -3,6 +3,7 @@ package casino;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.NumberFormat;
@@ -40,13 +41,17 @@ public class CasinoFrame extends JFrame{
             public void actionPerformed(ActionEvent e){
                 rateLabel.setText("Podaj stawkę (1/5/10/15):");
                 scorePanel.removeAll();
-                point1 = new JButton("1");
+                point1 = new JButton("<html><b><font size = 7>1</font></b></html>");
                 point1.setPreferredSize(new Dimension(180, 320));
                 point1.setEnabled(false);
                 point1.setBackground(Color.CYAN);
-                point2 = new JButton("2");
+                point2 = new JButton("<html><b><font size = 7>2</font></b></html>");
+                point2.setEnabled(false);
+                point2.setBackground(Color.CYAN);
                 point2.setPreferredSize(new Dimension(180, 320));
-                point3 = new JButton("3");
+                point3 = new JButton("<html><b><font size = 7>3</font></b></html>");
+                point3.setEnabled(false);
+                point3.setBackground(Color.CYAN);
                 point3.setPreferredSize(new Dimension(180, 320));
                 scorePanel.add(point1);
                 scorePanel.add(point2);
@@ -84,20 +89,25 @@ public class CasinoFrame extends JFrame{
         startButton = new JButton("START");
         startButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e){
-                String rate = rateField.getText();
-                String cash = playerCashField.getText(); 
-                if(!start)
-                    if(rate != null && !rate.equals("") && rate.matches("[0-9]+")){
-                        if(cash != null && !cash.equals("") && cash.matches("[0-9]+")){
-                            if(slotMachineButton.isSelected()) startSlotMachineGame(Integer.parseInt(cash), Integer.parseInt(rate));
-                            else startBlackjackGame(Integer.parseInt(cash), Integer.parseInt(rate));
-                        }else
-                            JOptionPane.showMessageDialog(null, "Pole z Twoimi pieniędzmi nie może być puste oraz musi składać się z cyfr.");
-                    }else{
-                        JOptionPane.showMessageDialog(null, "Pole ze stawką nie może być puste oraz musi składać się z cyfr.");
-                    }
-                else if(slotMachineButton.isSelected()) startSlotMachineGame(0, 0);
-                     else startBlackjackGame(0, 0);
+                String sRate = rateField.getText();
+                String sCash = playerCashField.getText(); 
+                if(sRate != null && !sRate.equals("") && sRate.matches("[0-9]+")){
+                    if(sCash != null && !sCash.equals("") && sCash.matches("[0-9]+")){
+                        int rate = Integer.parseInt(sRate);
+                        int cash = Integer.parseInt(sCash);
+                        if(cash < rate || b.getStateOfCasinoMoney() < rate){
+                            JOptionPane.showMessageDialog(null, "Tobie lub kasynie brakuje pieniędzy.");
+                        }else{
+                            rateField.setEnabled(false);
+                            playerCashField.setEnabled(false);
+                            if(slotMachineButton.isSelected()) startSlotMachineGame(cash, rate);
+                            else startBlackjackGame(cash, rate);
+                        }
+                    }else
+                        JOptionPane.showMessageDialog(null, "Pole z Twoimi pieniędzmi nie może być puste oraz musi składać się z cyfr.");
+                }else{
+                    JOptionPane.showMessageDialog(null, "Pole ze stawką nie może być puste oraz musi składać się z cyfr.");
+                }
             }
         });
         exitButton = new JButton("EXIT");
@@ -111,6 +121,8 @@ public class CasinoFrame extends JFrame{
             public void actionPerformed(ActionEvent e){
                 start = false;
                 b.setStateOfCasinoMoney(10000);
+                rateField.setEnabled(true);
+                playerCashField.setEnabled(true);
             }
         });
         buttonPanel.add(startButton);
@@ -134,14 +146,15 @@ public class CasinoFrame extends JFrame{
             start = true;
         }
         int[] score = slotMachineGame.play(); 
-        point1.setText(score[0] + "");
-        point2.setText(score[1] + "");
-        point3.setText(score[2] + "");
+        point1.setText("<html><b><font size = 7>" + score[0] + "</font></b></html>");
+        point2.setText("<html><b><font size = 7>" + score[1] + "</font></b></html>");
+        point3.setText("<html><b><font size = 7>" + score[2] + "</font></b></html>");
         boolean win = slotMachineGame.isWin();
         p.changeCash(b.getRate(), win);
         b.changeStateOfCasinoMoney(b.getRate(), win);
         NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(Locale.getDefault());
         if(win){
+            Toolkit.getDefaultToolkit().beep();
             JOptionPane.showMessageDialog(null, "WYGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()));
         }else{
             JOptionPane.showMessageDialog(null, "PRZEGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()));
@@ -202,6 +215,7 @@ public class CasinoFrame extends JFrame{
         p.changeCash(b.getRate(), win);
         NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(Locale.getDefault());
         if(win){
+            Toolkit.getDefaultToolkit().beep();
             scoreArea.append("WYGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()));
         }else{
             scoreArea.append("PRZEGRAŁEŚ!!\nTwoje pieniądze: " + currencyFormatter.format(p.getCash()) + " pieniądze kasyna: " + currencyFormatter.format(b.getStateOfCasinoMoney()));
