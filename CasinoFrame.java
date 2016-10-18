@@ -25,13 +25,33 @@ public class CasinoFrame extends JFrame{
     private static JButton startButton, resetButton, exitButton, point1, point2, point3; 
     private static JTextField rateField, playerCashField;
     private static JTextArea scoreArea;
-    private static JPanel scorePanel;
+    private static JPanel scoreSlotMachinePanel;
+    private static JScrollPane scoreScrollPane;
     private static JLabel rateLabel;
     private static Bank b;
     private static Player p; 
     private static boolean start; 
     private CasinoFrame(){ 
-        scorePanel = new JPanel();
+        scoreSlotMachinePanel = new JPanel();
+        scoreArea = new JTextArea(20, 50);
+        scoreScrollPane = new JScrollPane(scoreArea);
+        point1 = new JButton();
+        point1.setPreferredSize(new Dimension(180, 320));
+        point1.setEnabled(false);
+        point1.setBackground(Color.CYAN);
+        point2 = new JButton();
+        point2.setEnabled(false);
+        point2.setBackground(Color.CYAN);
+        point2.setPreferredSize(new Dimension(180, 320));
+        point3 = new JButton();
+        point3.setEnabled(false);
+        point3.setBackground(Color.CYAN);
+        point3.setPreferredSize(new Dimension(180, 320));
+        scoreSlotMachinePanel.setVisible(true);
+        scoreScrollPane.setVisible(false);
+        scoreSlotMachinePanel.add(point1);
+        scoreSlotMachinePanel.add(point2);
+        scoreSlotMachinePanel.add(point3);
         rateLabel = new JLabel();
         JPanel gamesPanel = new JPanel(); 
         ButtonGroup gamesButtonGroup = new ButtonGroup();
@@ -40,23 +60,9 @@ public class CasinoFrame extends JFrame{
         slotMachineButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e){
                 rateLabel.setText("Podaj stawkę (1/5/10/15):");
-                scorePanel.removeAll();
-                point1 = new JButton();
-                point1.setPreferredSize(new Dimension(180, 320));
-                point1.setEnabled(false);
-                point1.setBackground(Color.CYAN);
-                point2 = new JButton();
-                point2.setEnabled(false);
-                point2.setBackground(Color.CYAN);
-                point2.setPreferredSize(new Dimension(180, 320));
-                point3 = new JButton();
-                point3.setEnabled(false);
-                point3.setBackground(Color.CYAN);
-                point3.setPreferredSize(new Dimension(180, 320));
-                scorePanel.add(point1);
-                scorePanel.add(point2);
-                scorePanel.add(point3);
-                add(scorePanel, BorderLayout.CENTER);
+                scoreSlotMachinePanel.setVisible(true);
+                scoreScrollPane.setVisible(false);
+                add(scoreSlotMachinePanel, BorderLayout.CENTER);
                 validate();
                 if(start) changeRate(); 
             } 
@@ -66,8 +72,6 @@ public class CasinoFrame extends JFrame{
         blackjackButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e){
                 rateLabel.setText("Podaj stawkę:");
-                scorePanel.removeAll();
-                scoreArea = new JTextArea(20, 50);
                 scoreArea.setLineWrap(true);
                 scoreArea.setText("ZASADY GRY:\nKarty o wartościach od 2 do 10 są odpowiednio"
                 + "oznaczone liczbami od 2 do 10. Waltet, Dama i Król to kolejno liczby "
@@ -76,8 +80,8 @@ public class CasinoFrame extends JFrame{
                 + "Gracz wygrywa, gdy jego liczba punktów jest >= niż punkty krupiera oraz <= od 21.\n"
                 + "Możliwe ruchy gracza: hit (pobranie karty), split (zamiana podwójnych kart), stand (oczekiwanie)"
                 + "lub check (sprawdzenie wyniku).\n\n");
-                JScrollPane scoreScrollPane = new JScrollPane(scorePanel);
-                scorePanel.add(scoreArea);
+                scoreSlotMachinePanel.setVisible(false); 
+                scoreScrollPane.setVisible(true);
                 add(scoreScrollPane, BorderLayout.CENTER);
                 validate();
                 if(start) changeRate();
@@ -275,4 +279,3 @@ public class CasinoFrame extends JFrame{
         return false;
     }
 }
-
