@@ -19,6 +19,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+/**
+ * Obiekt klasy <code>CasinoFrame</code> reprezentuje ramkę zarządzającą kasynem.
+ * Umożliwia ona podanie pieniędzy posiadanych przez gracza, ustawienie stawki gry, 
+ * uruchomienie jednorękiego bandyty lub blackjacka oraz resetowanie ustawień.
+ * @author AleksanderSklorz
+ */
 public class CasinoFrame extends JFrame{
     private static CasinoFrame frame;
     private static JRadioButton slotMachineButton, blackjackButton;
@@ -104,8 +110,8 @@ public class CasinoFrame extends JFrame{
             public void actionPerformed(ActionEvent e){
                 String sRate = rateField.getText();
                 String sCash = playerCashField.getText(); 
-                if(sRate != null && !sRate.equals("") && sRate.matches("[0-9]+")){
-                    if(sCash != null && !sCash.equals("") && sCash.matches("[0-9]+")){
+                if(sRate != null && sRate.matches("[0-9]+")){
+                    if(sCash != null && sCash.matches("[0-9]+")){
                         int rate = Integer.parseInt(sRate);
                         int cash = Integer.parseInt(sCash);
                         if(cash < rate || b.getStateOfCasinoMoney() < rate){
@@ -159,9 +165,16 @@ public class CasinoFrame extends JFrame{
             frame = new CasinoFrame();
         return frame;
     }
+    /**
+     * Uruchamia grę Jednoręki bandyta. Ustawia wartości pieniędzy gracza oraz
+     * stawkę gry. Wyświetla wylosowane wartości oraz informację o wygranej lub 
+     * przegranej gracza. Wygrana gracza jest dodatkowo sygnalizowana dźwiękiem.
+     * @param cash pieniądze posiadane przez gracza.
+     * @param rate stawka gry.
+     */
     public void startSlotMachineGame(int cash, int rate){
         SlotMachine slotMachineGame = SlotMachine.createSlotMachine(); 
-        if(!start){
+        if(!start){ // uniemożliwia zmianę pieniędzy gracza i stawki w trakcie gry
             b.setRate(rate);
             p.setCash(cash);
             start = true;
@@ -173,6 +186,7 @@ public class CasinoFrame extends JFrame{
         boolean win = slotMachineGame.isWin();
         p.changeCash(b.getRate(), win);
         b.changeStateOfCasinoMoney(b.getRate(), win);
+        // dzięki poniższemu wywołaniu pieniądze będą wyświetlane w walucie państwa w którym uruchomiono program
         NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(Locale.getDefault());
         if(win){
             Toolkit.getDefaultToolkit().beep();
@@ -182,6 +196,15 @@ public class CasinoFrame extends JFrame{
         }
         changeRate();
     }
+    /**
+     * Uruchamia grę Blackjack. Ustawia wartości pieniędzy gracza oraz stawkę gry.
+     * Wyświetla pobrane karty gracza oraz karty krupiera, przy czym jedna karta
+     * krupiera jest zasłonięta. Wyświetla też informację o wygranej lub przegranej 
+     * gracza, wygrana jest sygnalizowana dodatkowo dźwiękiem. W trakcie gry 
+     * wyświetla okienko dialogowe umożliwiające wykonywanie czynności w trakcie grzy przez gracza.
+     * @param cash pieniądze posiadane przez gracza. 
+     * @param rate stawka gry. 
+     */
     public void startBlackjackGame(int cash, int rate){
         Blackjack blackjackGame = Blackjack.createBlackjack();
         if(!start){
@@ -208,36 +231,38 @@ public class CasinoFrame extends JFrame{
                     else scoreArea.append(croupierCards[i] + " ");
             }
             scoreArea.append("\n");
-            boolean changed;
+            boolean done;
+            String sNumber;
             do{
-                changed = true;
+                done = true;
+                sNumber = "";
                 option  = JOptionPane.showOptionDialog(null, "Co chcesz zrobić?", null, 
                         JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, new String[]{"Hit", "Stand", "Split", "Check"}, null);
                 switch(option){
                     case 0:
-                        blackjackGame.hit(blackjackGame.getPlayerCards());
+                        done = blackjackGame.hit(blackjackGame.getPlayerCards());
+                        if(!done)
+                            JOptionPane.showMessageDialog(null, "Nie możesz mieć więcej kart niż 9.");
                         break;
                     case 1:
                          break;
                     case 2:
-                        String sNumber;
                         do{
                             sNumber = JOptionPane.showInputDialog("Wybierz numer karty, której duplikatu chcesz się pozbyć:");
-                            int i = -1;
                             if(sNumber != null && sNumber.matches("[0-9]+")){
-                                i = Integer.parseInt(sNumber);
-                                changed = blackjackGame.split(i);
+                                int i = Integer.parseInt(sNumber);
+                                done = blackjackGame.split(i);
                             }
-                        }while(sNumber == null || !sNumber.matches("[0-9]+"));
+                        }while(sNumber != null && !sNumber.matches("[0-9]+"));
+                        if(!done)
+                            JOptionPane.showMessageDialog(null,"Ta liczba się nie powtarza. Wybierz inną czynność lub podaj inny numer liczby.");
                         break;
                     case 3:
                         scoreArea.append("Wynik:\n");
                         win = blackjackGame.isWin();
                         scoreArea.append("Gracz: " + blackjackGame.getPoints(playerCards) + " krupier: " + blackjackGame.getPoints(croupierCards) + "\n");
                 }
-                if(!changed)
-                    JOptionPane.showMessageDialog(null,"Ta liczba się nie powtarza. Wybierz inną czynność lub podaj inny numer liczby.");
-            }while(!changed);
+            }while(!done || sNumber == null);
         }while(option != 3);
         b.changeStateOfCasinoMoney(b.getRate(), win);
         p.changeCash(b.getRate(), win);
@@ -269,13 +294,10 @@ public class CasinoFrame extends JFrame{
                         }
                     }
                 }
-                System.out.println(sNewRate);
             }while(sNewRate != null && (!sNewRate.matches("[0-9]+") || !checkForSlotMachineGame(newRate) || notEnoughMoney));
         }    
     }
     private boolean checkForSlotMachineGame(int cash){
-        if(slotMachineButton.isSelected() && (cash == 1 || cash == 5 || cash == 10 || cash == 15) || !slotMachineButton.isSelected()) 
-            return true; 
-        return false;
+        return slotMachineButton.isSelected() && (cash == 1 || cash == 5 || cash == 10 || cash == 15) || !slotMachineButton.isSelected();
     }
 }
