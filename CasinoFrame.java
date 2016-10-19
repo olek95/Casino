@@ -38,47 +38,39 @@ public class CasinoFrame extends JFrame{
     private static Player p; 
     private static boolean start; 
     private CasinoFrame(){ 
-        scoreSlotMachinePanel = new JPanel();
-        scoreArea = new JTextArea(20, 50);
-        scoreScrollPane = new JScrollPane(scoreArea);
-        point1 = new JButton();
-        point1.setPreferredSize(new Dimension(180, 320));
-        point1.setEnabled(false);
-        point1.setBackground(Color.CYAN);
-        point2 = new JButton();
-        point2.setEnabled(false);
-        point2.setBackground(Color.CYAN);
-        point2.setPreferredSize(new Dimension(180, 320));
-        point3 = new JButton();
-        point3.setEnabled(false);
-        point3.setBackground(Color.CYAN);
-        point3.setPreferredSize(new Dimension(180, 320));
-        scoreSlotMachinePanel.setVisible(true);
-        scoreScrollPane.setVisible(false);
-        scoreSlotMachinePanel.add(point1);
-        scoreSlotMachinePanel.add(point2);
-        scoreSlotMachinePanel.add(point3);
-        rateLabel = new JLabel();
-        JPanel gamesPanel = new JPanel(); 
+        setLayout(new BorderLayout());
+        JPanel gamesPanel = new JPanel();
         ButtonGroup gamesButtonGroup = new ButtonGroup();
         slotMachineButton = new JRadioButton("Jednoręki bandyta");
-        setLayout(new BorderLayout());
+        blackjackButton = new JRadioButton("Blackjack");
+        scoreSlotMachinePanel = new JPanel();
+        point1 = new JButton();
+        point2 = new JButton();
+        point3 = new JButton();
+        makePointField(point1);
+        makePointField(point2);
+        makePointField(point3);
+        add(scoreSlotMachinePanel, BorderLayout.CENTER);
+        scoreArea = new JTextArea(20, 50);
+        scoreArea.setLineWrap(true);
+        scoreScrollPane = new JScrollPane(scoreArea);
+        rateLabel = new JLabel();
         slotMachineButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e){
+                point1.setText(null);
+                point2.setText(null);
+                point3.setText(null);
                 rateLabel.setText("Podaj stawkę (1/5/10/15):");
                 scoreSlotMachinePanel.setVisible(true);
                 scoreScrollPane.setVisible(false);
-                add(scoreSlotMachinePanel, BorderLayout.CENTER);
                 validate();
                 if(start) changeRate(); 
             } 
         });
         slotMachineButton.doClick();
-        blackjackButton = new JRadioButton("Blackjack");
         blackjackButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e){
                 rateLabel.setText("Podaj stawkę:");
-                scoreArea.setLineWrap(true);
                 scoreArea.setText("ZASADY GRY:\nKarty o wartościach od 2 do 10 są odpowiednio"
                 + "oznaczone liczbami od 2 do 10. Waltet, Dama i Król to kolejno liczby "
                 + "11, 12, 13. Te trzy karty mają wartość 10. Natomiast AS może mieć wartośc "
@@ -138,10 +130,8 @@ public class CasinoFrame extends JFrame{
             }
         });
         exitButton = new JButton("EXIT");
-        exitButton.addActionListener(new ActionListener(){
-            public void actionPerformed(ActionEvent e){
+        exitButton.addActionListener(e -> {
                 System.exit(0);
-            }
         });
         resetButton = new JButton("RESET");
         resetButton.addActionListener(new ActionListener(){
@@ -299,5 +289,11 @@ public class CasinoFrame extends JFrame{
     }
     private boolean checkForSlotMachineGame(int cash){
         return slotMachineButton.isSelected() && (cash == 1 || cash == 5 || cash == 10 || cash == 15) || !slotMachineButton.isSelected();
+    }
+    private void makePointField(JButton point){
+        point.setPreferredSize(new Dimension(180, 320));
+        point.setEnabled(false);
+        point.setBackground(Color.CYAN);
+        scoreSlotMachinePanel.add(point);
     }
 }
