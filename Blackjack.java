@@ -8,7 +8,7 @@ import javax.swing.JOptionPane;
 /**
  * Obiekt klasy <code>Blackjack</code> będzie reprezentował grę Blackjack. 
  * Gracz wygrywa w tej grze jeśli ma więcej lub tyle samo punktów co krupiej oraz
- * mniej lub równo 21 punktów.
+ * mniej lub równo 21 punktów albo jeśli krupier ma więcej niż 21 punktów a gracz mniej lub równo 21.
  * @author AleksanderSklorz
  */
 public class Blackjack {
@@ -54,6 +54,7 @@ public class Blackjack {
                 if(drawn == 14)
                     if(ownerCards == playerCards) drawn = aceOneOrEleven();
                     else if(getPoints(croupierCards) + 11 > 21) drawn = 15;
+                // założyłem że jeśli suma punktów krupiera + 11 jest mniejsza niż 11 to krupier może przyjąć wartość Asa jako 11 (bo 15 oznacza 11)
             }while((drawn != 15 && availableCards.get(drawn) == 0) || (drawn == 15 && availableCards.get(drawn - 1) == 0));
             ownerCards[i] = drawn;
             if(drawn == 15) drawn--;
@@ -110,13 +111,46 @@ public class Blackjack {
         return sum; 
     }
     /**
+     * Steruje decyzjami krupiera. Pobiera kartę z talii, jeśli suma punktów krupiera
+     * będzie mniejsza lub równa niż 11 albo 12 albo 13 (granica dobrana losowo).
+     * Ponadto decyduje o zamianie duplikatów.
+     * Zdarzeia te są generowane losowo, także może zdarzyć się iż mimo np. wystąpienia 
+     * duplikatu - nie zostanie on zastąpiony. 
+     */
+    public void doCroupierTurn(){
+        Random ran = new Random(); 
+        boolean doAction = ran.nextBoolean();
+        /* zmienna dodana po to, aby nie zawsze dla 11 albo 12 albo 13 była pobrana karta
+        lub aby nie zawsze dla duplikatów były robione zamiany*/
+        if(doAction){ 
+            int i = getDuplicateIndex(croupierCards);
+            if(i != -1){
+                int card = croupierCards[i];
+                System.out.println(card);
+                croupierCards[i] = 0;
+                hit(croupierCards);
+                availableCards.replace(card, availableCards.get(card) + 1);
+            }else{
+                /* nie trzeba sprawdzać czy nie ma więcej kart niż 9, poniewaz 
+                nawet kombinacja dziesięciu najmniejszych wartości zawsze będzie mniejsza niż 
+                nawiększa możliwa suma wartości czyli 13*/
+                if(getPoints(croupierCards) <= ran.nextInt(3) + 11){
+                    hit(croupierCards);
+                }
+            }
+        }
+    }
+    /**
      * Sprawdza czy gracz wygrał w grę. Wygra wtedy, gdy suma punktów gracza
-     * jest większa lub równa sumie punktów krupiera oraz mniejsza lub równa 21.
+     * jest większa lub równa sumie punktów krupiera oraz mniejsza lub równa 21
+     * albo gdy suma punktów krupiera jest większa niż 21 a suma punktów gracza mniejsza
+     * lub równa 21.
      * @return czy gracz wygrał w grę.
      */
     public boolean isWin(){
         int playerSum = getPoints(playerCards);
-        return playerSum >= getPoints(croupierCards) && playerSum <= 21;
+        int croupierSum = getPoints(croupierCards);
+        return croupierSum <= 21 && playerSum >= getPoints(croupierCards) && playerSum <= 21 || croupierSum > 21 && playerSum <= 21;
     }
     /**
      * Zwraca wszystkie karty gracza (wraz z miejscami równymi 0).
@@ -136,6 +170,15 @@ public class Blackjack {
         for(int i = 0; i < ownerCards.length; i++)
             if(ownerCards[i] == 0) return i;
         return ownerCards.length; // jeśli nie znajdzie 0, zwraca długość
+    }
+    private int getDuplicateIndex(int[] ownerCards){
+        int zeroIndex = findZero(croupierCards);
+        for(int i = 0; i < zeroIndex - 1; i++){
+            for(int k = i + 1; k < ownerCards.length; k++)
+                if(ownerCards[i] == ownerCards[k])
+                    return i;
+        }
+        return -1;
     }
 }
 
