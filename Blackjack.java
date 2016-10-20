@@ -1,6 +1,6 @@
 package casino;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 import javax.swing.JOptionPane;
@@ -12,9 +12,10 @@ import javax.swing.JOptionPane;
  * @author AleksanderSklorz
  */
 public class Blackjack {
-     private static Blackjack game;
+    private static Blackjack game;
     private static int[] playerCards, croupierCards;
     private static HashMap<Integer, Integer> availableCards;
+    private static ArrayList<Integer> deck;
     private Blackjack(){
     }
     public static synchronized Blackjack createBlackjack(){
@@ -27,13 +28,24 @@ public class Blackjack {
      * karty graczowi i krupierowi.
      */
     public void play(){
+        Random ran = new Random();
+        deck = new ArrayList();
         playerCards = new int[9]; // maksymalnie gracz może mieć 9 karty w talii
         croupierCards = new int[9];
         availableCards = new HashMap();
         for(int i = 2; i <= 14; i++)
             availableCards.put(i, 4); // każda wartość występuje po 4 razy
-        Arrays.fill(playerCards, 0); // 0 oznacza iż w tym miejscu brak karty
-        Arrays.fill(croupierCards, 0);
+        for(int i = 0; i < 52; i++){ // talia ma 52 karty
+            boolean added = false;
+            do{
+                int cardType = ran.nextInt(13) + 2;
+                if(availableCards.get(cardType) != 0){
+                    deck.add(cardType);
+                    availableCards.replace(cardType, availableCards.get(cardType) - 1);
+                    added = true;
+                }
+            }while(!added);
+        }
         for(int i = 0; i < 2; i++){
             hit(playerCards);
             hit(croupierCards);
@@ -45,20 +57,15 @@ public class Blackjack {
      * @return czy udało się pobrać kartę
      */
     public boolean hit(int[] ownerCards){
-        Random rand = new Random();
         int i = findZero(ownerCards);
         int drawn;
         if(i != ownerCards.length){
-            do{
-                drawn = rand.nextInt(13) + 2; // dodaję 2 bo karty numeruje się od 2
-                if(drawn == 14)
-                    if(ownerCards == playerCards) drawn = aceOneOrEleven();
-                    else if(getPoints(croupierCards) + 11 > 21) drawn = 15;
-                // założyłem że jeśli suma punktów krupiera + 11 jest mniejsza niż 11 to krupier może przyjąć wartość Asa jako 11 (bo 15 oznacza 11)
-            }while((drawn != 15 && availableCards.get(drawn) == 0) || (drawn == 15 && availableCards.get(drawn - 1) == 0));
+            drawn = deck.remove(0); // pobiera pierwszą kartę z góry 
+            if(drawn == 14)
+                if(ownerCards == playerCards) drawn = aceOneOrEleven();
+                else if(getPoints(croupierCards) + 11 > 21) drawn = 15;
+            // założyłem że jeśli suma punktów krupiera + 11 jest mniejsza niż 11 to krupier może przyjąć wartość Asa jako 11 (bo 15 oznacza 11)
             ownerCards[i] = drawn;
-            if(drawn == 15) drawn--;
-            availableCards.replace(drawn, availableCards.get(drawn) - 1);
             return true;
         }
         return false;
@@ -72,10 +79,13 @@ public class Blackjack {
         int card = playerCards[i - 1];
         int index = 0;
         do{
-            if(index != i - 1 && playerCards[index] == card){ // sprawdza czy rzeczywiście istnieje duplikat
+            // sprawdza czy rzeczywiście istnieje duplikat
+            if(index != i - 1 && (playerCards[index] == card || playerCards[index] == 15 && card == 14 
+                    || playerCards[index] == 14 && card == 15)){ // zarówno 14 i 15 symbolizują Asa więc jest to ta sama karta
                 playerCards[i - 1] = 0;
                 hit(playerCards);
-                availableCards.replace(card, availableCards.get(card) + 1);
+                if(card == 15) card--; // ogólny As ma symbol 14
+                deck.add(card); // oddaje kartę na koniec talii 
                 return true;
             }
             index++;
@@ -126,10 +136,10 @@ public class Blackjack {
             int i = getDuplicateIndex(croupierCards);
             if(i != -1){
                 int card = croupierCards[i];
-                System.out.println(card);
                 croupierCards[i] = 0;
+                if(card == 15) card--;
                 hit(croupierCards);
-                availableCards.replace(card, availableCards.get(card) + 1);
+                deck.add(card);
             }else{
                 /* nie trzeba sprawdzać czy nie ma więcej kart niż 9, poniewaz 
                 nawet kombinacja dziesięciu najmniejszych wartości zawsze będzie mniejsza niż 
@@ -175,7 +185,8 @@ public class Blackjack {
         int zeroIndex = findZero(croupierCards);
         for(int i = 0; i < zeroIndex - 1; i++){
             for(int k = i + 1; k < ownerCards.length; k++)
-                if(ownerCards[i] == ownerCards[k])
+                if(ownerCards[i] == ownerCards[k] || ownerCards[i] == 14 && ownerCards[k] == 15 
+                        || ownerCards[i] == 15 && ownerCards[k] == 14)
                     return i;
         }
         return -1;
